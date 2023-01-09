@@ -7,7 +7,7 @@ from PIL import Image
 import numpy as np
 
 
-class Low2HighMask(Dataset):
+class Low2HighMaskDataset(Dataset):
 
     def __init__(
         self,
@@ -52,6 +52,5 @@ class Low2HighMask(Dataset):
 
 
 if __name__ == "__main__":
-    # d = Low2HighMask('datasets/birds_imagenet/train/')
-    d = Low2HighMask('dataset_index/train_birds_vivid_mask.txt')
+    d = Low2HighMaskDataset('data_index/train_birds_vivid_mask.txt')
     print(d[0])
