@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from torchvision.transforms import ToPILImage
 
 
-# define the LightningModule
 class UNet(pl.LightningModule):
 
     def __init__(self, lr, ch_in, ch_out):
@@ -22,6 +21,7 @@ class UNet(pl.LightningModule):
 
         # LOGGING
         self.log("train/mse", loss)
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -33,7 +33,9 @@ class UNet(pl.LightningModule):
 
         # LOGGING
         self.log("valid/mse", loss, sync_dist=True)
-        self.log_img(x, x_hat)
+        if batch_idx % 16 == 0:
+            self.log_img(x, x_hat)
+
         return loss
 
     def configure_optimizers(self):

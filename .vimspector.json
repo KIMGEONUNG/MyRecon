@@ -6,12 +6,12 @@
                   "request": "launch",                                                    
                   "type": "python",                                                       
                   "cwd": "${workspaceRoot}",                                              
-                  "program": "train.py",
+                  "program": "${file}",
                   "args":[],
                   "stopOnEntry": true,                                                   
                   "console": "integratedTerminal",
                   "env": {"FOO": "123"},
-                  "justMyCode": true
+                  "justMyCode": false
              },                                                                        
              "breakpoints": {                                                          
                  "exception": {                                                          

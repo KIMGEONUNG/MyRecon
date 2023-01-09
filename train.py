@@ -60,7 +60,6 @@ if __name__ == "__main__":
                                            name=nowname)
 
     # DEFINE Trainer
-    trainer_kwargs["accelerator"] = "gpu"
     trainer_kwargs["strategy"] = DDPStrategy(find_unused_parameters=False)
     trainer_kwargs["devices"] = opt.devices
     for key in config.trainer:
