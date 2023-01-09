@@ -6,6 +6,7 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.trainer import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.strategies import DDPStrategy
 
 from utils import instantiate_from_config
 from callbacks import SetupCallback
@@ -60,6 +61,7 @@ if __name__ == "__main__":
 
     # DEFINE Trainer
     trainer_kwargs["accelerator"] = "gpu"
+    trainer_kwargs["strategy"] = DDPStrategy(find_unused_parameters=False)
     trainer_kwargs["devices"] = opt.devices
     for key in config.trainer:
         trainer_kwargs[key] = config.trainer[key]

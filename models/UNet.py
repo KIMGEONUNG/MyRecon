@@ -2,6 +2,8 @@ from torch import optim, nn
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from torchvision.transforms import ToPILImage
+
 
 # define the LightningModule
 class UNet(pl.LightningModule):
@@ -19,7 +21,7 @@ class UNet(pl.LightningModule):
         loss = nn.functional.mse_loss(x_hat, x)
 
         # LOGGING
-        self.log("train_loss", loss)
+        self.log("train/mse", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -30,12 +32,21 @@ class UNet(pl.LightningModule):
         loss = nn.functional.mse_loss(x_hat, x)
 
         # LOGGING
-        self.log("valid_loss", loss)
+        self.log("valid/mse", loss, sync_dist=True)
+        self.log_img(x, x_hat)
         return loss
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
+
+    def log_img(self, x, x_hat):
+        x = x.add(1).div(2).clamp(0, 1)
+        x_hat = x_hat.add(1).div(2).clamp(0, 1)
+        imgs = torch.cat([x, x_hat], dim=-2)
+
+        self.logger.log_image(key="Results",
+                              images=[ToPILImage()(img) for img in imgs])
 
 
 class DoubleConv(nn.Module):

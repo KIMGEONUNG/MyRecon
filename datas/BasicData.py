@@ -25,24 +25,22 @@ class BasicData(pl.LightningDataModule):
         pass
 
     def setup(self, stage: str):
+
+        t = Compose([
+            ToTensor(),
+            Resize(256),
+            CenterCrop(256),
+            lambda x: x * 2 - 1,
+        ])
+
         if stage == "fit" or stage is None:
-            self.train = ImageFolder(self.path_train,
-                                     transform=Compose([
-                                         ToTensor(),
-                                         Resize(256),
-                                         CenterCrop(256),
-                                     ]))
-            self.val = ImageFolder(self.path_valid,
-                                   transform=Compose([
-                                       ToTensor(),
-                                       Resize(256),
-                                       CenterCrop(256),
-                                   ]))
+            self.train = ImageFolder(self.path_train, transform=t)
+            self.val = ImageFolder(self.path_valid, transform=t)
         else:
             raise
 
     def train_dataloader(self):
-        return DataLoader(self.train, **self.config_dataloader_valid)
+        return DataLoader(self.train, **self.config_dataloader_train)
 
     def val_dataloader(self):
-        return DataLoader(self.val, **self.config_dataloader_train)
+        return DataLoader(self.val, **self.config_dataloader_valid)
