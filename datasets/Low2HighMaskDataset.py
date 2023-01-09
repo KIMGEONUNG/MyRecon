@@ -1,7 +1,7 @@
-from torchvision.datasets import ImageFolder
-from torchvision.transforms import Grayscale, ToTensor
+from torchvision.transforms import (ToTensor, Compose, Resize, CenterCrop,
+                                    InterpolationMode, Grayscale)
 from typing import Tuple, Any, Optional, Callable
-
+import torch
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
@@ -11,36 +11,57 @@ class Low2HighMaskDataset(Dataset):
 
     def __init__(
         self,
-        index_file,
-        trainsform_img=None,
-        trainsform_mask=None,
+        path_index: str,
+        size: int,
     ):
         super().__init__()
-        self.transform_img = trainsform_img
-        self.transform_mask = trainsform_mask
+        self.transform_img = Compose([
+            ToTensor(),
+            Resize(size),
+            CenterCrop(size),
+            lambda x: x * 2 - 1,
+        ])
+        self.transform_mask = Compose([
+            ToTensor(),
+            Resize(size, interpolation=InterpolationMode.NEAREST),
+            CenterCrop(size),
+        ])
 
-        with open(index_file, "r") as f:
+        with open(path_index, "r") as f:
             paths = f.read().splitlines()
-        # ImagePath
+
+        # Define Path
         path_img = [path + ".JPEG" for path in paths]
-        # MaskPath
         path_mask = [
-            path.replace("train", "train.mask") + ".npy" for path in paths
+            path.replace("train", "train.mask").replace("valid", "valid.mask")
+            + ".npy" for path in paths
         ]
+
         self.samples = list(zip(path_img, path_mask))
+
+    def __len__(self):
+        return len(self.samples)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         path_img, path_mask = self.samples[index]
 
         x = self.loader_img(path_img)
+        x = self.transform_img(x)
+
         mask = self.loader_mask(path_mask)
+        mask = self.transform_mask(mask)
 
-        if self.transform_img is not None:
-            x = self.transform_img(x)
-        if self.transform_img is not None:
-            mask = self.transform_img(mask)
+        x_low, x_mid, x_high = self.extract_low2high(x, mask)
 
-        return None
+        return x, x_low, x_mid, x_high, mask
+
+    def extract_low2high(self, x, mask):
+        x_ = x + 1
+        x_ = x_ * mask
+        x_ = x_.mean(dim=(1, 2))
+        order = torch.argsort(x_)
+        x_low, x_mid, x_high = x[order]
+        return x_low[None, ...], x_mid[None, ...], x_high[None, ...]
 
     def loader_img(self, path):
         with open(path, 'rb') as f:
@@ -51,6 +72,44 @@ class Low2HighMaskDataset(Dataset):
         return np.load(path)
 
 
+# class Low2HighMaskValidDataset(Dataset):
+#
+#     def __init__(
+#         self,
+#         path_index: str,
+#         size: int,
+#     ):
+#         super().__init__()
+#         self.togray = Grayscale()
+#         self.transform_img = Compose([
+#             ToTensor(),
+#             Resize(size),
+#             CenterCrop(size),
+#             lambda x: x * 2 - 1,
+#         ])
+#
+#         with open(path_index, "r") as f:
+#             paths = f.read().splitlines()
+#
+#         self.samples = paths
+#
+#     def __getitem__(self, index: int) -> Tuple[Any, Any]:
+#         path_img = self.samples[index]
+#         x = self.loader_img(path_img)
+#         x = self.transform_img(x)
+#         x_g = Grayscale()(x)
+#
+#         return x, x_g
+#
+#     def loader_img(self, path):
+#         with open(path, 'rb') as f:
+#             img = Image.open(f)
+#             return img.convert('RGB')
+
 if __name__ == "__main__":
-    d = Low2HighMaskDataset('data_index/train_birds_vivid_mask.txt')
-    print(d[0])
+    d = Low2HighMaskTrainDataset('data_index/train_birds_vivid_mask.txt', 256)
+    x, x_low, x_mid, x_high, mask = d[0]
+
+    d = Low2HighMaskValidDataset('data_index/birds_vivid_valid_40.txt', 256)
+    x = d[0]
+    print(x)
