@@ -7,10 +7,10 @@ model:
     ch_in: 3
     ch_out: 3
 data:
-  target: datas.BasicData.BasicData
+  target: datamodules.BasicDataModule.BasicDataModule
   params:
-    path_train: datasets/birds_imagenet/train/
-    path_valid: datasets/birds_imagenet/valid/
+    path_train: datas/birds_imagenet/train/
+    path_valid: datas/birds_imagenet/valid/
     size: 256
     config_dataloader_train:
       batch_size: 64 
